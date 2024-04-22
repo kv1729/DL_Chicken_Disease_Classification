@@ -9,30 +9,32 @@ class PrepareCallback:
     def __init__(self, config: PrepareCallbacksConfig):
         self.config = config
 
-
-    
-    @property
     def _create_tb_callbacks(self):
-        timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
-        tb_running_log_dir = os.path.join(
-            self.config.tensorboard_root_log_dir,
-            f"tb_logs_at_{timestamp}",
-        )
-        return tf.keras.callbacks.TensorBoard(log_dir=tb_running_log_dir)
-    
+        try:
+            timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
+            tb_running_log_dir = os.path.join(
+                self.config.tensorboard_root_log_dir,
+                f"tb_logs_at_{timestamp}",
+            )
+            return tf.keras.callbacks.TensorBoard(log_dir=tb_running_log_dir)
+        except Exception as e:
+            print(f"Error creating TensorBoard callback: {e}")
+            return None
 
-    @property
     def _create_ckpt_callbacks(self):
-        return tf.keras.callbacks.ModelCheckpoint(
-            filepath=self.config.checkpoint_model_filepath.with_suffix('.keras'), # Append .keras extension
-            save_best_only=True
-    )
-
-
-
+        try:
+            return tf.keras.callbacks.ModelCheckpoint(
+                filepath=self.config.checkpoint_model_filepath.with_suffix('.keras'), # Append .keras extension
+                save_best_only=True
+            )
+        except Exception as e:
+            print(f"Error creating ModelCheckpoint callback: {e}")
+            return None
 
     def get_tb_ckpt_callbacks(self):
-        return [
-            self._create_tb_callbacks,
-            self._create_ckpt_callbacks
-        ]
+        tb_callback = self._create_tb_callbacks()
+        ckpt_callback = self._create_ckpt_callbacks()
+        if tb_callback is not None and ckpt_callback is not None:
+            return [tb_callback, ckpt_callback]
+        else:
+            return []
